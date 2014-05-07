@@ -21,6 +21,11 @@ public class PlayerController : MonoBehaviour {
 	private bool _left;
 	private bool _up;
 
+	// flags to remember state for touch between updates, to allow for release.
+	private bool _touchLeft;
+	private bool _touchRight;
+	private bool _touchUp;
+
 	void Awake()
 	{
 		//_animator = GetComponent<Animator>();
@@ -65,21 +70,27 @@ public class PlayerController : MonoBehaviour {
 		_right = Input.GetKey( KeyCode.RightArrow );
 		_left = Input.GetKey( KeyCode.LeftArrow );
 
+		// touch controls, if relevant
 		foreach (Touch touch in Input.touches){
-			if (touch.phase == TouchPhase.Began){
-				Ray ray = Camera.main.ScreenPointToRay(touch.position);
-				RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction);
-				if (hit.collider != null) {
-					if (hit.collider.gameObject.name == "left_arrow_64x64") {
-						_left = true;
-					} else if (hit.collider.gameObject.name == "right_arrow_64x64") {
-						_right = true;
-					} else if (hit.collider.gameObject.name == "up_arrow_64x64") {
-						_up = true;
-					}
+			bool fingerDown = (touch.phase == TouchPhase.Began);
+
+			Ray ray = Camera.main.ScreenPointToRay(touch.position);
+			RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction);
+			if (hit.collider != null) {
+				if (hit.collider.gameObject.name == "left_arrow_64x64") {
+					_touchLeft = fingerDown;
+				} else if (hit.collider.gameObject.name == "right_arrow_64x64") {
+					_touchRight = fingerDown;
+				} else if (hit.collider.gameObject.name == "up_arrow_64x64") {
+					_touchUp = fingerDown;
 				}
 			}
 		}
+
+		// Update with current state, if finger has just touched or is still touching from last time.
+		_left |= _touchLeft;
+		_right |= _touchRight;
+		_up |= _touchUp;
 
 		// Only if keys aren't being used, check joysticks etc.
 		if (_right == false) {
